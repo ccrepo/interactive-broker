@@ -1,0 +1,53 @@
+#
+# Makefile tws API shared lib
+# 
+
+all: prepare build
+
+MAKEFILE_PATH = $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR  = $(dir $(MAKEFILE_PATH))
+BUILD_DIR     = $(PWD)
+
+BUILD_ROOT    = ..
+
+LIB_ROOT    = $(BUILD_ROOT)/lib
+LIB_SRCDIR  = $(LIB_ROOT)/src
+LIB_INCDIR  = $(LIB_ROOT)/include
+LIB_BINDIR  = $(BUILD_ROOT)/bin
+LIB_FILE    = libTwsSocketClient.so
+LIB_TARGET  = $(LIB_BINDIR)/$(LIB_FILE)
+
+LIB_SRCDIRS = $(shell find $(LIB_SRCDIR) -type d | sort -r)
+LIB_INCDIRS = $(shell find $(LIB_INCDIR) -type d | sort -r)
+
+LIB_SRCS    = $(shell find $(LIB_SRCDIR) -name *.cpp)
+LIB_OBJS    = $(LIB_SRCS:%.cpp=%.o)
+LIB_INCS    = -I. $(addprefix -I, $(LIB_INCDIRS)) $(addprefix -I, $(LIB_SRCDIRS))
+
+BUILD_DIRS  = $(LIB_BINDIR)
+
+CCC	    = g++
+
+CPPFLAGS = -pthread -Wall -Wno-switch -Wpedantic -std=c++11 -fPIC
+LDLIBS   = -lpthread
+
+.cpp.o:
+	$(CCC) -c $(CPPFLAGS) $< $(LIB_INCS) -o $@
+
+$(LIB_TARGET): $(LIB_OBJS) 
+	$(CCC) -shared $(CPPFLAGS) $(LIB_INCS) -o $(LIB_TARGET) $(LIB_OBJS) 
+
+prepare:
+	@for builddir in $(BUILD_DIRS); do if [ ! -d "$$builddir" ]; then \mkdir "$$builddir" ; echo making "$$builddir" ; fi; done
+	@for builddir in $(BUILD_DIRS); do if [ ! -d "$$builddir" ]; then \echo "could not create/read dir $$builddir"; exit 1; fi; done
+
+build: $(LIB_TARGET)
+
+clean:
+	\rm -f $(LIB_OBJS) $(LIB_TARGET)
+
+.PHONEY: all
+.PHONEY: prepare
+.PHONEY: build
+.PHONEY: clean
+

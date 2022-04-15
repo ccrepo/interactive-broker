@@ -1,0 +1,71 @@
+
+#
+# Makefile sudokusolver 
+# 
+
+all: prepare build
+
+MAKEFILE_PATH = $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR  = $(dir $(MAKEFILE_PATH))
+BUILD_DIR     = $(PWD)
+
+BUILD_ROOT    = ..
+
+LIB_ROOT    = $(BUILD_ROOT)/lib
+LIB_SRCDIR  = $(LIB_ROOT)/src
+LIB_INCDIR  = $(LIB_ROOT)/include
+LIB_NAME    = TwsSocketClient
+LIB_FILE    = libTwsSocketClient.so
+
+EXE_SRCDIR  = $(BUILD_ROOT)/src
+EXE_BINDIR  = $(BUILD_ROOT)/bin
+EXE_NAME    = interactivebrokers
+EXE_TARGET  = $(EXE_BINDIR)/$(EXE_NAME)
+EXE_SUBDIRS = $(shell find $(EXE_SRCDIR) -type d | sort -r)
+EXE_SRCS    = $(shell find $(EXE_SRCDIR) -name *.cpp)
+EXE_OBJS    = $(EXE_SRCS:%.cpp=%.o)
+EXE_INCS    = -I. $(addprefix -I, $(EXE_SUBDIRS)) -I $(LIB_INCDIR)
+
+SQLITE_LIBDIR = 
+SQLITE_LIBNAME = sqlite3
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+SQLITE_LIBDIR += -L/usr/lib/x86_64-linux-gnu/
+endif
+
+BUILD_DIRS  = $(EXE_BINDIR)
+
+CCC	    = g++
+
+# NOTE: levels are -std=c++11 -std=c++14 -std=c++17 -std=c++2a
+CPPFLAGS = -Wall -g -std=c++2a
+
+LDLIBS      = -L$(EXE_BINDIR) -lpthread -l$(LIB_NAME) $(SQLITE_LIBDIR) -l$(SQLITE_LIBNAME)
+
+.cpp.o:
+	$(CCC) -c $(CPPFLAGS) $< $(EXE_INCS) -o $@
+
+$(EXE_TARGET): $(EXE_OBJS) 
+	$(CCC) $(CPPFLAGS) -o $(EXE_TARGET) $(EXE_OBJS) $(LDLIBS)
+
+prepare:
+	@for builddir in $(BUILD_DIRS); do if [ ! -d "$$builddir" ]; then \mkdir "$$builddir" ; echo making "$$builddir" ; fi; done
+	@for builddir in $(BUILD_DIRS); do if [ ! -d "$$builddir" ]; then \echo "could not create/read dir $$builddir"; exit 1; fi; done
+
+build: $(EXE_TARGET)
+
+clean:
+	\rm -fr $(EXE_OBJS) $(EXE_TARGET)
+
+# only for linux
+depend:
+	makedepend -DSUDOKUSOLVER_MAKEDEPENDS -Y $(EXE_INCS) -- $(CPPFLAGS) -- $(EXE_SRCS) 
+
+.PHONEY: all
+.PHONEY: prepare
+.PHONEY: build
+.PHONEY: clean
+.PHONEY: depend
+
+
