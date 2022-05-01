@@ -1,4 +1,4 @@
-# interactivebrokers.<p>
+# Interactive Brokers.<p>
 interactivebrokers client example.<p>
 
 interactivebroker/bin - build target dir. exe's are placed here. run wrappers are here.<p>
